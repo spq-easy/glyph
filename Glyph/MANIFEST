@@ -1,5 +1,12 @@
+bin/glyph-add-service
 Changes
+ignore.txt
 lib/Glyph.pm
+lib/Glyph/Controller.pm
+lib/Glyph/Endpoint.pm
+lib/Glyph/Mojo.pm
+lib/Glyph/Role/ErrorHandler.pm
+lib/Glyph/Role/LogHandler.pm
 Makefile.PL
 MANIFEST			This list of files
 README
@@ -7,3 +14,9 @@ t/00-load.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
+templates/perl_lib/Client.pm.tt
+templates/perl_lib/Endpoint.pm.tt
+templates/service/Controller.pm.tt
+templates/service/moniker.conf.tt
+templates/service/Service.pm.tt
+xt/boilerplate.t

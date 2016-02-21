@@ -1,2 +1,5 @@
 glyph.sublime*
 .perl-version
+Glyph/MYMETA*
+Glyph/Makefile
+Glyph/MANIFEST.bak
