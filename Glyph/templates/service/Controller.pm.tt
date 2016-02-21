@@ -1,0 +1,16 @@
+package [% service_class %]::Controller;
+# Should this just be a role?
+
+# All the common code for service routers
+
+use Moo;
+extends qw(Glyph::Controller);
+use namespace::clean;
+
+use Method::Signatures;
+
+method _build_base_classname {
+	return [% base_classname %]
+}
+
+1;

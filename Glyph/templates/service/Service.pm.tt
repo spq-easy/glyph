@@ -1,0 +1,30 @@
+package [% service_class %];
+
+use Moo;
+extends 'Glyph::Mojo';
+use namespace::clean;
+
+use Method::Signatures;
+
+
+method _build_service {
+    return '[% moniker %]';
+}
+
+# This method will run once at server start
+method startup {
+    # This will also control the name of the startup configuration file read
+    $self->app->moniker($self->service);
+
+    # Read in the swagger specification for the service
+    my $spec = $self->read_swagger(__FILE__);
+
+    # Create the routes for each endpoint defined in the spec, using controllerId
+    # as the Endpoint package name
+    $self->build_routes($spec);
+}
+
+
+1;
+
+
