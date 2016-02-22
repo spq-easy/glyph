@@ -1,0 +1,14 @@
+package [% base_classname %]::[% service_class %]::Endpoint;
+
+# Base class for all [% service_class %] endpoints
+
+use Moo;
+with qw(
+    Glyph::Role::Endpoint
+    Glyph::Role::ErrorHandler
+    Glyph::Role::LogHandler
+);
+use namespace::clean;
+
+
+1;

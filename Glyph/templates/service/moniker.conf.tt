@@ -1,0 +1,13 @@
+# Configuration file for [% service_class %]
+{
+  mode => 'development',
+  log_level => '[% log_level %]',
+  hypnotoad => {
+    user    => '[% username %]',
+    listen  => ['http://*:3001'],
+    workers => 12,
+    clients => 100,
+    accepts => 100,
+    proxy => 1,
+  }
+};

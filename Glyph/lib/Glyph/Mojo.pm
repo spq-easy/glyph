@@ -11,13 +11,25 @@ use namespace::clean;
 use Method::Signatures;
 use YAML::Syck();
 
+# The swagger spec could have other attributes at the same level as the hhtp
+# method(s); only process a specific supported list
+my @HTTP_METHODS = qw(get post put delete);
+
+# Subclasses will set the builder
+# has service => (
+#     is => 'lazy',
+# );
+
 
 method read_swagger ($lib_file) {
-    $lib_file =~ s/\w+\.pm$/swagger.yaml/;
+    $lib_file =~ s/(\w+)\.pm$/$1.yaml/;
+    warn "== Trying to read $lib_file\n";
     open(my $file, '<', $lib_file);
 
     local $/ = undef; # slurpy
     my $yaml = <$file>;
+
+    die "Unable to read swagger spec" unless $yaml;
 
     my $spec = YAML::Syck::Load($yaml);
 
@@ -33,14 +45,17 @@ method build_routes ($spec) {
         
         # Change swagger path syntax to Mojolicious route syntax
         my @parts = split('/', $path);
+        shift(@parts); # leading slash causes undef in first index
         foreach my $part (@parts) {
             $part =~ s/\{(\w+)\}/*$1/;
         }
 
-        my $mojo_path = join('/', @parts);
+        my $mojo_path = '/' . join('/', @parts);
+        warn "== Adding handlers for $mojo_path\n";
 
         # For each http method for the same path
         foreach my $method (@methods) {
+            next unless grep { $method eq $_ } @HTTP_METHODS;
             # The op_id is both the auto-generated route handler as well as the
             # final part of the services Endpoint class name to instantiate to
             # actually handle the details of the request processing
@@ -49,6 +64,7 @@ method build_routes ($spec) {
             # TO DO: Generate the code from a template?
             my $handler = sub { 
                 my $c = shift;
+                warn "--- In $op_id ---\n";
 
                 my $desc = $c->stash('spec')->{description};
 
@@ -59,13 +75,14 @@ method build_routes ($spec) {
                 # TBD: Pass in the whole stash? $c? Something like compile_args?
             };
 
-            my $name = ref($self) . "::Router::$op_id";
+            my $name = ref($self) . "::Controller::$op_id";
             {
                 no strict 'refs'; # Hoist the handler into the symbol table
                 *$name = $handler;
             }
 
-            $router->$method($mojo_path)->to("router#$op_id",
+            warn "===  $name added for controller#$op_id\n";
+            $router->$method($mojo_path)->to("controller#$op_id",
                 path   => \@parts,
                 spec   => $spec->{paths}{$path}{$method},
                 method => $method,

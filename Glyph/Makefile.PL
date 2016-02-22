@@ -9,7 +9,7 @@ WriteMakefile(
     VERSION_FROM     => 'lib/Glyph.pm',
     ABSTRACT_FROM    => 'lib/Glyph.pm',
     LICENSE          => 'apache_2_0',
-    PL_FILES         => {},
+    PL_FILES         => { 'bin/install_templates.PL' => '$(INSTALLSCRIPT)' },
     EXE_FILES        => [qw(bin/glyph-add-service)],
     MIN_PERL_VERSION => 5.0018,
     CONFIGURE_REQUIRES => {

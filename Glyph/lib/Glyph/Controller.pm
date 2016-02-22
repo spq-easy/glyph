@@ -14,9 +14,9 @@ use Method::Signatures;
 
 
 # This will be the base classname to instantiate for handling the request
-has base_classname {
+has base_classname => (
     is => 'lazy',
-}
+);
 
 
 1;

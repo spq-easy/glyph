@@ -12,10 +12,11 @@ use Method::Signatures;
 
 =head1 NAME
 
-Glyph::Endpoint
+Glyph::Role::Endpoint
 
 =head1 SYNOPSIS
 
+Provide all the basic functionality needed to be an Glyph Endpoint
 
 =head1 DESCRIPTION
 

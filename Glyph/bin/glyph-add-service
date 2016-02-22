@@ -6,32 +6,116 @@ use strict;
 use feature qw(say);
 
 use FindBin qw($Bin);
-use lib "$Bin/../lib";
 
 use File::Path qw(make_path);
+use File::Copy qw(copy);
 #use File::Copy;
 use Template;
-use JSON;
 use Getopt::Long;
 #use Data::Dumper;
-
-my %PARAMS = ();
-GetOptions(\%PARAMS, 'help');
 
 unless (@ARGV) {
     usage();
     exit;
 }
 
+
+my %PARAMS = (
+    log_level => 'debug',
+    username  => $ENV{USER},
+    dir       => '.',
+);
+
+GetOptions(\%PARAMS, 'help', 
+    'service_class=s',  'moniker=s', 'swagger=s', 
+    'base_classname=s', 'dir=s',     'log_level=s',
+    'username=s',
+);
+
+
 if ($PARAMS{help}) {
-	exec("perldoc $0");
+    exec("perldoc $0");
 }
 
+unless ($PARAMS{service_class} && $PARAMS{base_classname} && $PARAMS{swagger}) {
+    die 'Missing required parameter(s)!';
+}
+
+$PARAMS{moniker} ||= lc($PARAMS{service_class});
+
+# Add service_class to the base class name to support multiple services under
+# the same tree
+$PARAMS{base_classname} = $PARAMS{base_classname} . "::$PARAMS{service_class}";
+
+##
+## Create paths needed
+##
+
+# Path for class libraries
+my $lib_path = $PARAMS{base_classname};
+$lib_path =~ s{::}{/}g;
+$lib_path = $PARAMS{dir} . "/$lib_path";
+make_path($lib_path) or die "Unable to create lib_path $lib_path: $!";
+
+# Path for service
+my $service_path = $PARAMS{dir} . "/service/$PARAMS{moniker}";
+make_path("$service_path/lib/$PARAMS{service_class}") 
+    or die "Unable to create service lib directories $service_path/lib: $!";
+
+make_path("$service_path/script") 
+    or die "Unable to create service script directory $service_path/script: $!";
+
+
+# Create Base libs
+# Template object for processing perl_lib templates
+my $tt_libs = Template->new(
+    {
+        INCLUDE_PATH => "$Bin/glyph-templates/perl_lib",
+        INTERPOLATE  => 0,
+        ABSOLUTE     => 1,
+    }
+) || die $Template::ERROR . ".\n";
+
+say "Creating $lib_path/Endpoint.pm";
+$tt_libs->process( "Endpoint.pm.tt", \%PARAMS, "$lib_path/Endpoint.pm" )
+    or die $tt_libs->error;
+
+
+# Create service
+my $tt_serv = Template->new(
+    {
+        INCLUDE_PATH => "$Bin/glyph-templates/service",
+        INTERPOLATE  => 0,
+        ABSOLUTE     => 1,
+    }
+) || die $Template::ERROR . ".\n";
+
+say "Creating $service_path/moniker.conf";
+$tt_serv->process( "moniker.conf.tt", \%PARAMS, "$service_path/moniker.conf" )
+    or die $tt_serv->error;
+
+say "Creating $service_path/lib/$PARAMS{service_class}.pm";
+$tt_serv->process( "Service.pm.tt", \%PARAMS, "$service_path/lib/$PARAMS{service_class}.pm" )
+    or die $tt_serv->error;
+
+say "Creating $service_path/lib/$PARAMS{service_class}/Controller.pm";
+$tt_serv->process( "Controller.pm.tt", \%PARAMS, "$service_path/lib/$PARAMS{service_class}/Controller.pm" )
+    or die $tt_serv->error;
+
+say "Creating $service_path/script/$PARAMS{moniker}";
+$tt_serv->process( "script.tt", \%PARAMS, "$service_path/script/$PARAMS{moniker}" )
+    or die $tt_serv->error;
+chmod(0755, "$service_path/script/$PARAMS{moniker}");
+
+# Copy swagger file to the right place
+copy($PARAMS{swagger}, "$service_path/lib/$PARAMS{service_class}.yaml")
+    or die "Unable to install $PARAMS{swagger}: $!";
 
 sub usage {
-	say <<USAGE;
+    say <<USAGE;
 
 glyph-add-service --help
+glyph-add-service --swagger swagger-echo.yaml --service_class Echo --base_classname Some::Namespace
 
 USAGE
 }
