@@ -1,4 +1,5 @@
 bin/glyph-add-service
+bin/install_templates.PL
 Changes
 ignore.txt
 lib/Glyph.pm
@@ -16,7 +17,9 @@ t/pod-coverage.t
 t/pod.t
 templates/perl_lib/Client.pm.tt
 templates/perl_lib/Endpoint.pm.tt
+templates/perl_lib/Handler.pm.tt
 templates/service/Controller.pm.tt
 templates/service/moniker.conf.tt
+templates/service/script.tt
 templates/service/Service.pm.tt
 xt/boilerplate.t

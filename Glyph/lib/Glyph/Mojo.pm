@@ -64,9 +64,9 @@ method build_routes ($spec) {
             # TO DO: Generate the code from a template?
             my $handler = sub { 
                 my $c = shift;
-                warn "--- In $op_id ---\n";
+                #warn "--- In $op_id ---\n";
 
-                my $desc = $c->stash('spec')->{description};
+                my $desc = $c->stash('spec')->{description} || 'no desc';
 
                 # Display closure and that we can read from the stash
                 $c->render(text => "You have reached $op_id: $desc");

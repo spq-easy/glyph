@@ -3,7 +3,6 @@ package [% service_class %]::Controller;
 
 use Moo;
 extends qw(Glyph::Controller);
-use namespace::clean;
 
 use Method::Signatures;
 
