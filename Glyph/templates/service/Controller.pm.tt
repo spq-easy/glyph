@@ -1,13 +1,52 @@
 package [% service_class %]::Controller;
 
+[% IF lib %]
+use lib '[% lib %]';
+[% END %]
+ 
 
 use Moo;
 extends qw(Glyph::Controller);
+with qw([% base_classname %]::Role::Authentication);
 
 use Method::Signatures;
+
+method _build_service {
+    return shift->app->moniker;
+}
 
 method _build_base_classname {
 	return '[% base_classname %]';
 }
 
 1;
+
+
+=head1 NAME
+
+[% service_class %]::Controller
+
+=head1 SYNOPSIS
+
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=over
+
+=item B<authenticate>
+
+=back
+
+=head1 SEE ALSO
+
+=head1 AUTHOR
+
+???
+
+=head1 LICENSE AND COPYRIGHT
+
+Your license here
+
+=cut

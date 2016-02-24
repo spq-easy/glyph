@@ -7,24 +7,50 @@ use namespace::clean;
 use Method::Signatures;
 
 
-#method _build_service {
-#    return '[% moniker %]';
-#}
+method _build_service {
+    return shift->app->moniker;
+}
 
 # This method will run once at server start
 method startup {
     # This will also control the name of the startup configuration file read
     $self->app->moniker('[% moniker %]');
 
-    # Read in the swagger specification for the service
-    my $spec = $self->read_swagger(__FILE__);
+    $self->SUPER::startup(__FILE__);
 
-    # Create the routes for each endpoint defined in the spec, using controllerId
-    # as the Endpoint package name
-    $self->build_routes($spec);
+    # Add any custom startup desired here
 }
 
 
 1;
 
 
+
+=head1 NAME
+
+[% service_class %]
+
+=head1 SYNOPSIS
+
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=over
+
+=item B<authenticate>
+
+=back
+
+=head1 SEE ALSO
+
+=head1 AUTHOR
+
+???
+
+=head1 LICENSE AND COPYRIGHT
+
+Your license here
+
+=cut

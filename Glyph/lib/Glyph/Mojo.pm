@@ -2,28 +2,39 @@ package Glyph::Mojo;
 
 use Moo;
 extends 'Mojolicious';
-with qw(
-    Glyph::Role::ErrorHandler
-    Glyph::Role::LogHandler
-);
 use namespace::clean;
 
 use Method::Signatures;
 use YAML::Syck();
+use Template;
 
 # The swagger spec could have other attributes at the same level as the hhtp
 # method(s); only process a specific supported list
-my @HTTP_METHODS = qw(get post put delete);
+my @HTTP_METHODS = qw(get post put delete patch);
 
 # Subclasses will set the builder
-# has service => (
-#     is => 'lazy',
-# );
+has service => (
+    is => 'lazy',
+);
+
+
+# This method will run once at server start
+method startup ($file) {
+    my $config = $self->plugin('Config');
+    $self->app->config($config);
+
+    # Read in the swagger specification for the service
+    my $spec = $self->read_swagger($file);
+
+    # Create the routes for each endpoint defined in the spec, using controllerId
+    # as the Endpoint package name
+    $self->build_routes($spec);
+}
 
 
 method read_swagger ($lib_file) {
     $lib_file =~ s/(\w+)\.pm$/$1.yaml/;
-    warn "== Trying to read $lib_file\n";
+    warn "=== Trying to read $lib_file\n";
     open(my $file, '<', $lib_file);
 
     local $/ = undef; # slurpy
@@ -39,7 +50,23 @@ method read_swagger ($lib_file) {
 
 method build_routes ($spec) {
     my $router = $self->routes;
+    
+    # Template object for processing route template
+    my $tt = Template->new(
+        {
+            INTERPOLATE  => 0,
+            ABSOLUTE     => 1,
+        }
+    ) || die $Template::ERROR . ".\n";
 
+    my $template;
+    {
+        $/ = undef; # slurpy
+        $template = <DATA>;
+    }
+
+    # Read through the parsed swagger spec and create a route handler for each
+    # endpoint spcified in the spec.
     foreach my $path (keys %{$spec->{paths}}) {
         my @methods = keys %{$spec->{paths}{$path}};
         
@@ -51,7 +78,7 @@ method build_routes ($spec) {
         }
 
         my $mojo_path = '/' . join('/', @parts);
-        warn "== Adding handlers for $mojo_path\n";
+        warn "=== Adding handlers for $mojo_path\n";
 
         # For each http method for the same path
         foreach my $method (@methods) {
@@ -62,23 +89,20 @@ method build_routes ($spec) {
             my $op_id = $spec->{paths}{$path}{$method}{operationId};
             
             # TO DO: Generate the code from a template?
-            my $handler = sub { 
-                my $c = shift;
-                #warn "--- In $op_id ---\n";
+            my $route;
+            my $code;
+            $tt->process(\$template, {
+                op_id => $op_id,
+            }, \$code);
 
-                my $desc = $c->stash('spec')->{description} || 'no desc';
-
-                # Display closure and that we can read from the stash
-                $c->render(text => "You have reached $op_id: $desc");
-
-                # TODO: Create actual Endpoint object
-                # TBD: Pass in the whole stash? $c? Something like compile_args?
-            };
+            # Nominal exception to the usual 'string eval is evil!'; alternate
+            # suggestions welcome.
+            eval "$code";
 
             my $name = ref($self) . "::Controller::$op_id";
             {
                 no strict 'refs'; # Hoist the handler into the symbol table
-                *$name = $handler;
+                *$name = $route;
             }
 
             warn "===  $name added for controller#$op_id\n";
@@ -135,4 +159,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 =cut
+
+__DATA__
+$route = sub {
+    my $c = shift;
+
+    my $auth = $c->authenticate;
+
+    my $class    = $c->base_classname . '::[% op_id %]';
+    my $endpoint = $c->mofs($class, { controller => $c });
+
+    my $result = $endpoint->execute_api;
+}
+
 

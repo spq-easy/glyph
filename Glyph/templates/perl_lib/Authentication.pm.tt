@@ -1,0 +1,49 @@
+package [% base_classname %]::Role::Authentication;
+
+use Moo::Role;
+
+requires qw(add_error);
+
+use Method::Signatures;
+
+
+##
+# How does your system handle authentication?
+method authenticate {
+    return 1;
+}
+
+# Authorization should be handled per endpoint
+
+
+1;
+
+
+=head1 NAME
+
+[% base_classname %]::[% service_class %]::Role::Authenticattion
+
+=head1 SYNOPSIS
+
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=over
+
+=item B<authenticate>
+
+=back
+
+=head1 SEE ALSO
+
+=head1 AUTHOR
+
+???
+
+=head1 LICENSE AND COPYRIGHT
+
+Your license here
+
+=cut

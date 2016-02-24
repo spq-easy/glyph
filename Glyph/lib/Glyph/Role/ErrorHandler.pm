@@ -1,8 +1,7 @@
 package Glyph::Role::ErrorHandler;
 
 use Moo::Role;
-
-#requires qw(dumpit trace error);
+requires qw(trace);
 
 
 use Method::Signatures;
@@ -29,39 +28,65 @@ method _build_errors {
 }
 
 
+##
+# Adds an error to the stack
 method add_error ($args = 'error') {
     # Support one argument call form: add_error('name')
     unless (ref($args) eq 'HASH') {
         $args = { name => $args }
     }
 
-    # TODO: Make sure details is an array if provided
-    # TBD: Where to get codes? From DB again?
-    # TBD: Do we need an error object?
-
     my $error = {
         name    => $args->{name}    || 'error',
         message => $args->{message} || 'unspecified error',
         details => $args->{details} || [ ],
-        code    => $args->{code}    || '9999',
     };
+
+    $args->{details} = [ $args->{details} ] unless ref($args->{details}) eq 'ARRAY';
+
+    push(@{$self->errors}, $error);
+
+    $self->_log_error($error, $args->{level});
 
     return $error;
 }
 
 
 ##
-# Add stack of errors to the list
+# Logs an error that was just added. The level is controllable for use cases
+# where errors are expected and the caller doesn't want to spam the logs.
+method _log_error ($error!, $level?) {
+    # Default + sanity check the log level. We don't want to execute arbitrary
+    # strings as methods.
+    if ( ! defined($level) || $level !~ /^(?:note|error|warn|info|debug|trace)$/ ) {
+        $level = 'error';
+    }
+
+    $self->$level({ 
+        message => $error->message,
+        name    => $error->name,
+        #dump    => $self->dumpit($error->details), # TODO
+    });
+}
+
+
+##
+# Add stack of errors to the list, useful for promoting errors into another object
 method push_errors ($errors = [ ]) {
     push(@{$self->errors}, @{$errors});
 }
 
+
+##
+# Returns the most recently recorded error
 method last_error {
     return $self->has_errors ? $self->errors->[-1] : undef;
 }
 
-# Look for a specific error name
-method has_error_name($name) {
+
+##
+# Look for a specific error name in the stack
+method has_error_name($name!) {
     # Obviously, we need some errors if we're looking for a specific code
     return undef unless $self->has_errors;
 
@@ -74,20 +99,6 @@ method has_error_name($name) {
 
     # Didn't find it
     return undef;
-}
-
-method log_error ($level, $error = $self->last_error) {
-    # Default + sanity check the log level. We don't want to execute arbitrary
-    # strings as methods.
-    if ( ! defined($level) || $level !~ /^(?:note|error|warn|info|debug|trace)$/ ) {
-        $level = 'error';
-    }
-
-    $self->$level({ message => $error->message,
-                    name    => $error->name,
-                    code    => $error->code,
-                    dump    => $self->dumpit($error->details),
-                  });
 }
 
 

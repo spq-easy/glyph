@@ -7,6 +7,7 @@ extends qw(Mojolicious::Controller);
 with qw(
     Glyph::Role::ErrorHandler
     Glyph::Role::LogHandler
+    Glyph::Role::ObjectFactory
 );
 use namespace::clean;
 
@@ -17,6 +18,12 @@ use Method::Signatures;
 has base_classname => (
     is => 'lazy',
 );
+
+# Subclasses will set the builder
+has service => (
+    is => 'lazy',
+);
+
 
 
 1;

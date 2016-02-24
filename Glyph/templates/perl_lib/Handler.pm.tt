@@ -1,9 +1,9 @@
-package [% base_classname %]::[% service_class %]::Endpoint::[% op_id %];
+package [% base_classname %]::Endpoint::[% op_id %];
 
 # Endpoint class to handle [% service_class %] [% op_id %] requests
 
 use Moo;
-extends qw([% base_classname %]::[% service_class %]::Endpoint);
+extends qw([% base_classname %]::Endpoint);
 use namespace::clean;
 
 use Method::Signatures;

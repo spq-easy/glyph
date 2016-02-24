@@ -24,12 +24,16 @@ my %PARAMS = (
     log_level => 'debug',
     username  => $ENV{USER},
     dir       => '.',
+    ## Should this support a setup conf rather than a huge options set?
+    workers => 5,
+    clients => 100,
+    accepts => 100,
 );
 
 GetOptions(\%PARAMS, 'help', 
     'service_class=s',  'moniker=s', 'swagger=s', 
     'base_classname=s', 'dir=s',     'log_level=s',
-    'username=s',
+    'username=s',       'lib=s',
 );
 
 
@@ -80,6 +84,10 @@ say "Creating $lib_path/Endpoint.pm";
 $tt_libs->process( "Endpoint.pm.tt", \%PARAMS, "$lib_path/Endpoint.pm" )
     or die $tt_libs->error;
 
+say "Creating $lib_path/Role/Authentication.pm";
+$tt_libs->process( "Authentication.pm.tt", \%PARAMS, "$lib_path/Role/Authentication.pm" )
+    or die $tt_libs->error;
+
 
 # Create service
 my $tt_serv = Template->new(
@@ -90,8 +98,8 @@ my $tt_serv = Template->new(
     }
 ) || die $Template::ERROR . ".\n";
 
-say "Creating $service_path/moniker.conf";
-$tt_serv->process( "moniker.conf.tt", \%PARAMS, "$service_path/moniker.conf" )
+say "Creating $service_path/$PARAMS{moniker}.conf";
+$tt_serv->process( "moniker.conf.tt", \%PARAMS, "$service_path/$PARAMS{moniker}.conf" )
     or die $tt_serv->error;
 
 say "Creating $service_path/lib/$PARAMS{service_class}.pm";
@@ -115,7 +123,9 @@ sub usage {
     say <<USAGE;
 
 glyph-add-service --help
-glyph-add-service --swagger swagger-echo.yaml --service_class Echo --base_classname Some::Namespace
+
+# For generating the Echo example
+glyph-add-service --swagger swagger-echo.yaml --service_class Echo --base_classname Some::Namespace -lib `pwd`
 
 USAGE
 }
